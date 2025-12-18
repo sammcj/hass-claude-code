@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="claudeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D97757"/>
+      <stop offset="100%" style="stop-color:#CC5F3D"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#1a1a1a"/>
+  <!-- Claude logo mark - stylised organic C shape -->
+  <path d="M 85 38
+           C 95 48, 100 60, 100 72
+           C 100 88, 88 100, 72 100
+           C 56 100, 44 92, 38 80
+           L 48 74
+           C 52 82, 60 88, 72 88
+           C 80 88, 88 80, 88 72
+           C 88 64, 84 56, 78 50
+           C 72 44, 64 42, 56 44
+           C 48 46, 42 52, 40 60
+           L 28 56
+           C 32 44, 42 34, 56 30
+           C 70 26, 78 30, 85 38
+           Z"
+        fill="url(#claudeGradient)"/>
+  <!-- Inner accent -->
+  <circle cx="58" cy="64" r="8" fill="url(#claudeGradient)" opacity="0.6"/>
+</svg>

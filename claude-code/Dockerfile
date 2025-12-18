@@ -12,6 +12,7 @@ RUN apk add --no-cache \
         ttyd \
         curl \
         jq \
+        git \
         coreutils \
     && mkdir -p /root/.config /root/.local/share /root/.claude
 

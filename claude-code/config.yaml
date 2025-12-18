@@ -1,11 +1,13 @@
-name: "HASS Code Terminal"
-description: "Claude Code CLI with persistent tmux sessions for Home Assistant"
+name: "Claude Code Terminal"
+description: "Anthropic's Claude Code CLI with persistent tmux sessions, OAuth persistence, and Home Assistant API integration"
 version: "2025.12.15"
 slug: "hass-claude-code"
 arch:
   - amd64
   - aarch64
-url: "https://github.com/sammcj/hass-claude-code"
+url: "https://github.com/sammcj/homeassistant-ai-cli"
+documentation: "https://github.com/sammcj/homeassistant-ai-cli/blob/main/README.md"
+advanced: true
 
 # Pre-built images from GHCR (faster installs)
 image: "ghcr.io/sammcj/{arch}-hass-claude-code"
