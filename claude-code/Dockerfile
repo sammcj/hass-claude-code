@@ -1,4 +1,4 @@
-# hadolint global ignore=DL3018,DL3016
+# hadolint global ignore=DL3018,DL3016,DL4006
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM ${BUILD_FROM}
 
