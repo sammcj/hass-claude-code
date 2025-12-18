@@ -34,8 +34,9 @@ RUN curl -fsSL https://claude.ai/install.sh | bash \
 ENV XDG_CONFIG_HOME=/data/.config \
     XDG_DATA_HOME=/data/.local/share
 
-# Copy rootfs and set permissions
+# Copy rootfs and default config files
 COPY rootfs /
+COPY default_CLAUDE.md /usr/share/claude-code/default_CLAUDE.md
 RUN chmod +x /run.sh /usr/local/bin/*
 
 EXPOSE 7681

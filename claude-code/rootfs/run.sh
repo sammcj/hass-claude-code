@@ -18,6 +18,20 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Setup default CLAUDE.md if not present
+# -----------------------------------------------------------------------------
+setup_claude_md() {
+    if [[ ! -f /config/CLAUDE.md ]]; then
+        if [[ -f /usr/share/claude-code/default_CLAUDE.md ]]; then
+            cp /usr/share/claude-code/default_CLAUDE.md /config/CLAUDE.md
+            echo "[INFO] Created default /config/CLAUDE.md"
+        fi
+    else
+        echo "[INFO] Using existing /config/CLAUDE.md"
+    fi
+}
+
+# -----------------------------------------------------------------------------
 # Setup persistent directories for OAuth tokens
 # -----------------------------------------------------------------------------
 setup_persistence() {
@@ -67,8 +81,8 @@ launch_with_tmux() {
     # Kill any stale session
     tmux kill-session -t claude 2>/dev/null || true
 
-    # Create new detached session running bash (more reliable than direct command)
-    tmux new-session -d -s claude
+    # Create new detached session in /config directory
+    tmux new-session -d -s claude -c /config
 
     # Configure session timeout (lock-after-time locks after idle)
     tmux set-option -t claude lock-after-time "$SESSION_TIMEOUT" 2>/dev/null || true
@@ -116,6 +130,7 @@ main() {
     echo "=============================================="
     echo ""
 
+    setup_claude_md
     setup_persistence
 
     if [[ "$TMUX_ENABLED" == "true" ]]; then

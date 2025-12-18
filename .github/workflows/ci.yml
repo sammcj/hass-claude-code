@@ -1,4 +1,5 @@
-name: Build and Publish
+---
+name: CI
 
 on:
   push:
@@ -15,32 +16,100 @@ env:
   REGISTRY: ghcr.io
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Bump version and commit (only on main branch pushes)
+  # Check if CI should be skipped
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Check for skip-ci
+        id: check
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$COMMIT_MSG" == *"[skip-ci]"* ]] || [[ "$PR_TITLE" == *"[skip-ci]"* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping CI due to [skip-ci] in commit message or PR title"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Linting jobs
+  hadolint:
+    runs-on: ubuntu-latest
+    needs: check-skip
+    if: needs.check-skip.outputs.skip != 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: claude-code/Dockerfile
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    needs: check-skip
+    if: needs.check-skip.outputs.skip != 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./claude-code/rootfs
+          severity: warning
+
+  yaml-lint:
+    runs-on: ubuntu-latest
+    needs: check-skip
+    if: needs.check-skip.outputs.skip != 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: "*.yaml claude-code/*.yaml"
+          config_data: |
+            extends: default
+            rules:
+              line-length:
+                max: 120
+              truthy:
+                check-keys: false
+
+  # Version bump (only on main branch pushes)
   version:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check-skip, hadolint, shellcheck, yaml-lint]
+    if: |
+      needs.check-skip.outputs.skip != 'true' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
     permissions:
       contents: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump version
         id: bump
         run: |
-          # Use date-based versioning: YYYY.MM.RUN_NUMBER
           VERSION="$(date +%Y.%-m).${{ github.run_number }}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-          # Update config.yaml
           sed -i "s/^version: .*/version: \"${VERSION}\"/" claude-code/config.yaml
           echo "Updated version to ${VERSION}"
 
@@ -52,10 +121,17 @@ jobs:
           git diff --staged --quiet || git commit -m "[automated commit or incremental update]"
           git push
 
+  # Build jobs (run after linting passes)
   build:
     runs-on: ubuntu-latest
-    needs: [version]
-    if: always() && (needs.version.result == 'success' || needs.version.result == 'skipped')
+    needs: [check-skip, hadolint, shellcheck, yaml-lint, version]
+    if: |
+      always() &&
+      needs.check-skip.outputs.skip != 'true' &&
+      needs.hadolint.result == 'success' &&
+      needs.shellcheck.result == 'success' &&
+      needs.yaml-lint.result == 'success' &&
+      (needs.version.result == 'success' || needs.version.result == 'skipped')
     permissions:
       contents: read
       packages: write
@@ -73,7 +149,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0

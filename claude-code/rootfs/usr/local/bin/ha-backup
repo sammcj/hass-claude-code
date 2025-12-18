@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ha-backup: Backup a file before editing
+# Usage: ha-backup <file_path>
+#
+# Creates timestamped backup at /config/backups/claude/<filename>.YYYY-MM-DD_HH.backup
+# Skips if backup already exists for current hour
+# Rotates backups older than 180 days
+
+BACKUP_DIR="/config/backups/claude"
+RETENTION_DAYS=180
+
+usage() {
+    echo "Usage: ha-backup <file_path>"
+    echo ""
+    echo "Creates a timestamped backup of the specified file."
+    echo "Backups are stored in $BACKUP_DIR"
+    echo "Backups older than $RETENTION_DAYS days are automatically removed."
+    exit 1
+}
+
+if [[ $# -ne 1 ]] || [[ -z "${1:-}" ]]; then
+    usage
+fi
+
+FILE_PATH="$1"
+
+# Resolve to absolute path
+if [[ ! "$FILE_PATH" = /* ]]; then
+    FILE_PATH="$(pwd)/$FILE_PATH"
+fi
+
+# Check file exists
+if [[ ! -f "$FILE_PATH" ]]; then
+    echo "Error: File not found: $FILE_PATH"
+    exit 1
+fi
+
+# Create backup directory
+mkdir -p "$BACKUP_DIR"
+
+# Generate backup filename with timestamp (hourly granularity)
+FILENAME=$(basename "$FILE_PATH")
+TIMESTAMP=$(date +%Y-%m-%d_%H)
+BACKUP_FILE="$BACKUP_DIR/${FILENAME}.${TIMESTAMP}.backup"
+
+# Check if backup already exists for this hour
+if [[ -f "$BACKUP_FILE" ]]; then
+    echo "Backup already exists for this hour: $BACKUP_FILE"
+else
+    cp -p "$FILE_PATH" "$BACKUP_FILE"
+    echo "Backup created: $BACKUP_FILE"
+fi
+
+# Rotate old backups (older than retention period)
+if [[ -d "$BACKUP_DIR" ]]; then
+    DELETED=$(find "$BACKUP_DIR" -name "*.backup" -type f -mtime +$RETENTION_DAYS -delete -print 2>/dev/null | wc -l)
+    if [[ "$DELETED" -gt 0 ]]; then
+        echo "Rotated $DELETED backup(s) older than $RETENTION_DAYS days"
+    fi
+fi
