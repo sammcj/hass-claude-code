@@ -1,6 +1,6 @@
 name: "Claude Code Terminal"
 description: "Anthropic's Claude Code CLI with persistent tmux sessions, OAuth persistence, and Home Assistant API integration"
-version: "2025.12.19"
+version: "2025.12.20"
 slug: "hass-claude-code"
 arch:
   - amd64
