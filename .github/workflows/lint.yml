@@ -22,7 +22,7 @@ jobs:
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.3.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: claude-code/Dockerfile
 
   shellcheck:
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
-          scandir: ./rootfs
+          scandir: ./claude-code/rootfs
           severity: warning
 
   yaml-lint:
@@ -45,7 +45,7 @@ jobs:
       - name: Lint YAML files
         uses: ibiqlik/action-yamllint@v3
         with:
-          file_or_dir: "*.yaml"
+          file_or_dir: "*.yaml claude-code/*.yaml"
           config_data: |
             extends: default
             rules:
