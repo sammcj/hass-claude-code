@@ -21,26 +21,38 @@ fi
 # Setup persistent directories for OAuth tokens
 # -----------------------------------------------------------------------------
 setup_persistence() {
-    local dirs=(
+    # Create persistent storage directories
+    local data_dirs=(
         "/data/.claude"
         "/data/.config/claude"
         "/data/.anthropic"
-        "/data/.config"
-        "/data/.local/share"
+        "/data/.local/share/claude"
     )
 
-    for dir in "${dirs[@]}"; do
+    for dir in "${data_dirs[@]}"; do
         mkdir -p "$dir"
         chmod 700 "$dir"
     done
 
+    # Ensure parent directories exist in container
+    mkdir -p /root/.config /root/.local/share
+
+    # Remove existing directories/files before creating symlinks
+    # (container is ephemeral, /data persists)
+    rm -rf /root/.claude /root/.anthropic
+    rm -rf /root/.config/claude /root/.local/share/claude
+
     # Create symlinks for OAuth token persistence
-    # Claude Code may store tokens in various locations
     ln -sfn /data/.claude /root/.claude
     ln -sfn /data/.config/claude /root/.config/claude
     ln -sfn /data/.anthropic /root/.anthropic
+    ln -sfn /data/.local/share/claude /root/.local/share/claude
+
+    # Set HOME explicitly for Claude Code
+    export HOME=/root
 
     echo "[INFO] Persistence directories configured"
+    echo "[INFO] Token storage: /data/.claude"
 }
 
 # -----------------------------------------------------------------------------
