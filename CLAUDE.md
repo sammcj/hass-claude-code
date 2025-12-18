@@ -10,27 +10,29 @@ Home Assistant addon providing Claude Code CLI with persistent tmux sessions. Ex
 
 ```bash
 # Build Docker image locally
-docker build -t claude-code-terminal .
+docker build -t claude-code-terminal claude-code/
 
 # Run locally for testing
 docker run -it -p 7681:7681 claude-code-terminal
 
 # Lint Dockerfile
-hadolint Dockerfile
+hadolint claude-code/Dockerfile
 
 # Lint shell scripts
-shellcheck rootfs/run.sh rootfs/usr/local/bin/*
+shellcheck claude-code/rootfs/run.sh claude-code/rootfs/usr/local/bin/*
 ```
 
 ## Architecture
 
 ```
-Dockerfile           # Alpine-based, installs Claude Code via official installer
-config.yaml          # HA addon manifest (version, arch, ingress, options schema)
-build.yaml           # Multi-arch base image definitions
-rootfs/
-  run.sh             # Entrypoint: reads options, sets up persistence, launches ttyd+tmux
-  usr/local/bin/     # HA API helper scripts (ha-api, ha-states, ha-call, ha-history)
+repository.yaml      # HA addon repository manifest
+claude-code/         # Addon directory
+  Dockerfile         # Alpine-based, installs Claude Code via official installer
+  config.yaml        # HA addon manifest (version, arch, ingress, options schema)
+  build.yaml         # Multi-arch base image definitions
+  rootfs/
+    run.sh           # Entrypoint: reads options, sets up persistence, launches ttyd+tmux
+    usr/local/bin/   # HA API helper scripts (ha-api, ha-states, ha-call, ha-history)
 ```
 
 **Entry flow**: `run.sh` reads `/data/options.json`, creates symlinks for OAuth persistence in `/data/.claude/`, then launches ttyd connected to a tmux session running Claude Code.
