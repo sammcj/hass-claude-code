@@ -1,6 +1,6 @@
 name: "HASS Code Terminal"
 description: "Claude Code CLI with persistent tmux sessions for Home Assistant"
-version: "0.1.0"
+version: "2025.12.13"
 slug: "hass-claude-code"
 arch:
   - amd64
