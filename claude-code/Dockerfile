@@ -5,7 +5,8 @@ FROM ${BUILD_FROM}
 ENV LANG=C.UTF-8 \
     XDG_CONFIG_HOME=/data/.config \
     XDG_DATA_HOME=/data/.local/share \
-    HOME=/root
+    HOME=/root \
+    PATH="/root/.claude/local/bin:${PATH}"
 
 # Install dependencies and Claude Code
 RUN apk add --no-cache \
@@ -16,9 +17,10 @@ RUN apk add --no-cache \
         jq \
     && mkdir -p /root/.config /root/.local/share
 
-# https://code.claude.com/docs/en/setup#standard-installation
+# https://docs.anthropic.com/en/docs/claude-code/getting-started
 # hadolint ignore=DL3008,DL4006
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN curl -fsSL https://claude.ai/install.sh | bash \
+    && claude --version
 
 # Copy rootfs and set permissions
 COPY rootfs /

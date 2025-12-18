@@ -50,17 +50,25 @@ launch_with_tmux() {
     # Kill any stale session
     tmux kill-session -t claude 2>/dev/null || true
 
-    # Create new detached session
-    if [[ "$AUTO_LAUNCH" == "true" ]]; then
-        tmux new-session -d -s claude "claude"
-    else
-        tmux new-session -d -s claude
-    fi
+    # Create new detached session running bash (more reliable than direct command)
+    tmux new-session -d -s claude
 
     # Configure session timeout (lock-after-time locks after idle)
     tmux set-option -t claude lock-after-time "$SESSION_TIMEOUT" 2>/dev/null || true
 
+    # Verify session exists
+    if ! tmux has-session -t claude 2>/dev/null; then
+        echo "[ERROR] Failed to create tmux session"
+        exit 1
+    fi
+
     echo "[INFO] tmux session 'claude' created (timeout: ${SESSION_TIMEOUT}s)"
+
+    # If auto-launch, send claude command to the session
+    if [[ "$AUTO_LAUNCH" == "true" ]]; then
+        echo "[INFO] Auto-launching Claude Code..."
+        tmux send-keys -t claude "claude" Enter
+    fi
 
     # Launch ttyd connecting to tmux session
     exec ttyd -W -p 7681 tmux attach -t claude
