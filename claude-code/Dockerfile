@@ -20,6 +20,9 @@ RUN apk add --no-cache \
 # https://docs.anthropic.com/en/docs/claude-code/getting-started
 # hadolint ignore=DL3008,DL4006
 RUN curl -fsSL https://claude.ai/install.sh | bash \
+    && CLAUDE_BIN=$(find /root -name "claude" -type f -executable 2>/dev/null | head -1) \
+    && echo "Claude installed at: $CLAUDE_BIN" \
+    && ln -sf "$CLAUDE_BIN" /usr/local/bin/claude \
     && claude --version
 
 # Copy rootfs and set permissions
