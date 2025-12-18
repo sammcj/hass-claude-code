@@ -65,9 +65,13 @@ launch_with_tmux() {
     echo "[INFO] tmux session 'claude' created (timeout: ${SESSION_TIMEOUT}s)"
 
     # If auto-launch, send claude command to the session
+    # Use 'exec' so exiting claude terminates the session (security: no root shell)
     if [[ "$AUTO_LAUNCH" == "true" ]]; then
         echo "[INFO] Auto-launching Claude Code..."
-        tmux send-keys -t claude "claude" Enter
+        tmux send-keys -t claude "exec claude" Enter
+    else
+        # Even without auto-launch, exit session when claude exits
+        tmux send-keys -t claude "claude; exit" Enter
     fi
 
     # Launch ttyd connecting to tmux session
