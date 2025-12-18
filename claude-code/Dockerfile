@@ -5,31 +5,22 @@ FROM ${BUILD_FROM}
 ENV LANG=C.UTF-8 \
     XDG_CONFIG_HOME=/data/.config \
     XDG_DATA_HOME=/data/.local/share \
-    HOME=/root \
-    PATH="/root/.claude/local/bin:${PATH}"
+    HOME=/root
 
-# Install dependencies and Claude Code
+# Install dependencies
 RUN apk add --no-cache \
         bash \
         tmux \
         ttyd \
         curl \
         jq \
+        nodejs \
+        npm \
     && mkdir -p /root/.config /root/.local/share
 
-# https://docs.anthropic.com/en/docs/claude-code/getting-started
-# hadolint ignore=DL3008,DL4006
-RUN set -x \
-    && curl -fsSL https://claude.ai/install.sh | bash \
-    && echo "=== Searching for claude binary ===" \
-    && find /root -name "claude*" -type f 2>/dev/null || true \
-    && find /usr -name "claude*" -type f 2>/dev/null || true \
-    && ls -la /root/.claude/ 2>/dev/null || true \
-    && ls -la /root/.local/bin/ 2>/dev/null || true \
-    && CLAUDE_BIN=$(find /root -name "claude" -type f -executable 2>/dev/null | head -1) \
-    && if [ -z "$CLAUDE_BIN" ]; then echo "ERROR: claude binary not found"; exit 1; fi \
-    && echo "Claude installed at: $CLAUDE_BIN" \
-    && ln -sf "$CLAUDE_BIN" /usr/local/bin/claude \
+# Install Claude Code via npm (more reliable in containers)
+# https://www.npmjs.com/package/@anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code \
     && claude --version
 
 # Copy rootfs and set permissions
