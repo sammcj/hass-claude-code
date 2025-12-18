@@ -68,8 +68,9 @@ jobs:
           GH_SHA: ${{ github.sha }}
           ADDON_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Base image path: ghcr.io/sammcj/hass-claude-code/{arch}
-          IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.arch }}"
+          # Image format: ghcr.io/sammcj/{arch}-hass-claude-code (matches config.yaml)
+          OWNER="${{ github.repository_owner }}"
+          IMAGE="${{ env.REGISTRY }}/${OWNER}/${{ matrix.arch }}-hass-claude-code"
 
           if [[ "${GH_REF}" == "refs/heads/main" ]]; then
             echo "tags=${IMAGE}:latest,${IMAGE}:${ADDON_VERSION}" >> "$GITHUB_OUTPUT"

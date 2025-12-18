@@ -8,7 +8,7 @@ arch:
 url: "https://github.com/sammcj/hass-claude-code"
 
 # Pre-built images from GHCR (faster installs)
-image: ghcr.io/sammcj/hass-claude-code/{arch}:latest
+image: "ghcr.io/sammcj/{arch}-hass-claude-code"
 
 # Web UI via ingress
 ingress: true
