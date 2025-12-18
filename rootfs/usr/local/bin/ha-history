@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ha-history - Query Home Assistant entity history
+# =============================================================================
+# Usage:
+#   ha-history sensor.temperature        # Last 24h history
+#   ha-history sensor.temperature 7d     # Last 7 days
+#   ha-history sensor.temperature 2h     # Last 2 hours
+# =============================================================================
+
+set -euo pipefail
+
+ENTITY="${1:-}"
+PERIOD="${2:-1d}"
+
+if [[ -z "$ENTITY" ]]; then
+    echo "Usage: ha-history <entity_id> [period]"
+    echo ""
+    echo "Period format: Nd (days), Nh (hours), Nm (minutes)"
+    echo "Examples:"
+    echo "  ha-history sensor.temperature"
+    echo "  ha-history sensor.temperature 7d"
+    echo "  ha-history light.living_room 2h"
+    exit 1
+fi
+
+if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
+    echo "Error: SUPERVISOR_TOKEN not set. Are you running inside Home Assistant?" >&2
+    exit 1
+fi
+
+# Parse period to calculate start time
+case "$PERIOD" in
+    *d) SECONDS_AGO=$((${PERIOD%d} * 86400)) ;;
+    *h) SECONDS_AGO=$((${PERIOD%h} * 3600)) ;;
+    *m) SECONDS_AGO=$((${PERIOD%m} * 60)) ;;
+    *)  SECONDS_AGO=86400 ;;
+esac
+
+# Calculate start timestamp (ISO 8601)
+START_TIME=$(date -u -d "@$(($(date +%s) - SECONDS_AGO))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
+             date -u -r "$(($(date +%s) - SECONDS_AGO))" +"%Y-%m-%dT%H:%M:%SZ")
+
+curl -sS \
+    -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+    -H "Content-Type: application/json" \
+    "http://supervisor/core/api/history/period/${START_TIME}?filter_entity_id=${ENTITY}" | \
+    jq '.[0] | if . then map({time: .last_changed, state: .state}) else empty end'

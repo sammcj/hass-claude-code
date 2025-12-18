@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ha-states - Query Home Assistant entity states
+# =============================================================================
+# Usage:
+#   ha-states                    # List all entities (summary)
+#   ha-states light              # List entities matching 'light'
+#   ha-states light.living_room  # Get specific entity details
+#   ha-states --full             # Full JSON output for all entities
+# =============================================================================
+
+set -euo pipefail
+
+FILTER="${1:-}"
+
+if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
+    echo "Error: SUPERVISOR_TOKEN not set. Are you running inside Home Assistant?" >&2
+    exit 1
+fi
+
+fetch_states() {
+    curl -sS \
+        -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+        -H "Content-Type: application/json" \
+        "http://supervisor/core/api/states"
+}
+
+# Full JSON output
+if [[ "$FILTER" == "--full" ]]; then
+    fetch_states | jq '.'
+    exit 0
+fi
+
+# Specific entity
+if [[ "$FILTER" == *.* ]]; then
+    fetch_states | jq --arg id "$FILTER" '.[] | select(.entity_id == $id)'
+    exit 0
+fi
+
+# Domain filter or all entities
+if [[ -n "$FILTER" ]]; then
+    fetch_states | jq -r --arg domain "$FILTER" \
+        '.[] | select(.entity_id | startswith($domain)) | "\(.entity_id): \(.state)"' | sort
+else
+    fetch_states | jq -r '.[] | "\(.entity_id): \(.state)"' | sort
+fi

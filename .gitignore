@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Local testing
+data/
+
+repos/
+
+

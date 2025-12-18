@@ -1,0 +1,47 @@
+name: "Claude Code Terminal"
+description: "Claude Code CLI with persistent tmux sessions for Home Assistant"
+version: "0.1.0"
+slug: "claude-code-terminal"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+url: "https://github.com/sammcj/hass-claude-code"
+
+# Pre-built images from GHCR (faster installs)
+image: ghcr.io/sammcj/hass-claude-code/{arch}:latest
+
+# Web UI via ingress
+ingress: true
+ingress_port: 7681
+panel_icon: "mdi:console"
+panel_title: "Claude"
+
+startup: "application"
+init: false
+
+# Home Assistant integration
+hassio_api: true
+homeassistant_api: true
+auth_api: true
+
+# Configuration schema
+schema:
+  session_timeout: int(60,86400)?
+  auto_launch_claude: bool?
+  tmux_enabled: bool?
+
+# Default options
+options:
+  session_timeout: 1800
+  auto_launch_claude: true
+  tmux_enabled: true
+
+# Port mapping (null = internal only via ingress)
+ports:
+  7681/tcp: null
+
+# Filesystem mappings
+map:
+  - config:rw
+  - backup:rw

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ha-api - Home Assistant REST API wrapper
+# =============================================================================
+# Usage:
+#   ha-api states                          # GET /api/states
+#   ha-api states/light.living_room        # GET /api/states/light.living_room
+#   ha-api services/light/turn_on POST '{"entity_id":"light.living_room"}'
+#
+# Environment:
+#   SUPERVISOR_TOKEN - Automatically provided by Home Assistant addon system
+# =============================================================================
+
+set -euo pipefail
+
+ENDPOINT="${1:-}"
+METHOD="${2:-GET}"
+DATA="${3:-}"
+
+if [[ -z "$ENDPOINT" ]]; then
+    echo "Usage: ha-api <endpoint> [METHOD] [JSON_DATA]"
+    echo ""
+    echo "Examples:"
+    echo "  ha-api states"
+    echo "  ha-api states/light.living_room"
+    echo "  ha-api services/light/turn_on POST '{\"entity_id\":\"light.living_room\"}'"
+    echo "  ha-api config"
+    echo "  ha-api history/period"
+    exit 1
+fi
+
+if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
+    echo "Error: SUPERVISOR_TOKEN not set. Are you running inside Home Assistant?" >&2
+    exit 1
+fi
+
+API_URL="http://supervisor/core/api/${ENDPOINT}"
+
+if [[ -n "$DATA" ]]; then
+    curl -sS \
+        -X "$METHOD" \
+        -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "$DATA" \
+        "$API_URL"
+else
+    curl -sS \
+        -X "$METHOD" \
+        -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+        -H "Content-Type: application/json" \
+        "$API_URL"
+fi

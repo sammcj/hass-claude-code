@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ha-call - Call Home Assistant services
+# =============================================================================
+# Usage:
+#   ha-call light turn_on light.living_room
+#   ha-call switch toggle switch.desk_lamp
+#   ha-call climate set_temperature climate.lounge '{"temperature": 22}'
+#   ha-call script turn_on script.goodnight
+# =============================================================================
+
+set -euo pipefail
+
+DOMAIN="${1:-}"
+SERVICE="${2:-}"
+ENTITY="${3:-}"
+EXTRA_DATA="${4:-}"
+
+if [[ -z "$DOMAIN" ]] || [[ -z "$SERVICE" ]]; then
+    echo "Usage: ha-call <domain> <service> [entity_id] [extra_json_data]"
+    echo ""
+    echo "Examples:"
+    echo "  ha-call light turn_on light.living_room"
+    echo "  ha-call switch toggle switch.desk_lamp"
+    echo "  ha-call climate set_temperature climate.lounge '{\"temperature\": 22}'"
+    echo "  ha-call automation trigger automation.morning_routine"
+    exit 1
+fi
+
+if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
+    echo "Error: SUPERVISOR_TOKEN not set. Are you running inside Home Assistant?" >&2
+    exit 1
+fi
+
+# Build service data JSON
+if [[ -n "$ENTITY" ]]; then
+    if [[ -n "$EXTRA_DATA" ]]; then
+        # Merge entity_id with extra data
+        DATA=$(echo "$EXTRA_DATA" | jq --arg eid "$ENTITY" '. + {entity_id: $eid}')
+    else
+        DATA="{\"entity_id\": \"$ENTITY\"}"
+    fi
+else
+    DATA="${EXTRA_DATA:-{}}"
+fi
+
+echo "Calling ${DOMAIN}.${SERVICE}..."
+curl -sS \
+    -X POST \
+    -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "$DATA" \
+    "http://supervisor/core/api/services/${DOMAIN}/${SERVICE}" | jq '.'
