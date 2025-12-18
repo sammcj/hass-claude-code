@@ -24,9 +24,15 @@ RUN apk add --no-cache \
 
 # Install Claude Code via native installer
 # https://docs.anthropic.com/en/docs/claude-code/setup
+# Installer updates ~/.bashrc with PATH, source it to find the binary
+SHELL ["/bin/bash", "-c"]
 RUN curl -fsSL https://claude.ai/install.sh | bash \
-    && ln -sf /root/.claude/bin/claude /usr/local/bin/claude \
-    && claude --version
+    && source /root/.bashrc || true \
+    && CLAUDE_BIN=$(find /root -name "claude" -type f -executable 2>/dev/null | grep -v node_modules | head -1) \
+    && echo "Found claude at: $CLAUDE_BIN" \
+    && ln -sf "$CLAUDE_BIN" /usr/local/bin/claude \
+    && /usr/local/bin/claude --version
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # Set XDG paths for runtime persistence (after install completes)
 ENV XDG_CONFIG_HOME=/data/.config \
