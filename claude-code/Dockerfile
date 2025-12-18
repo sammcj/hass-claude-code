@@ -19,9 +19,15 @@ RUN apk add --no-cache \
 
 # Install Claude Code via native installer
 # https://docs.anthropic.com/en/docs/claude-code/getting-started
-RUN curl -fsSL https://claude.ai/install.sh | bash -x 2>&1 \
-    && ls -la /root/.claude/ \
-    && ln -sf /root/.claude/bin/claude /usr/local/bin/claude \
+RUN curl -fsSL https://claude.ai/install.sh | bash 2>&1 \
+    && echo "=== Finding claude binary ===" \
+    && find /root -name "claude" -type f 2>/dev/null \
+    && find /usr -name "claude" -type f 2>/dev/null \
+    && ls -laR /root/.claude/ 2>/dev/null || true \
+    && ls -laR /root/.local/ 2>/dev/null || true \
+    && CLAUDE_PATH=$(find /root -name "claude" -type f -executable 2>/dev/null | grep -v downloads | head -1) \
+    && echo "Found claude at: $CLAUDE_PATH" \
+    && ln -sf "$CLAUDE_PATH" /usr/local/bin/claude \
     && claude --version
 
 # Copy rootfs and set permissions
