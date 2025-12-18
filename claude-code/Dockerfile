@@ -3,9 +3,12 @@ ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM ${BUILD_FROM}
 
 ENV LANG=C.UTF-8 \
-    HOME=/root
+    HOME=/root \
+    USE_BUILTIN_RIPGREP=0
 
-# Install dependencies (coreutils provides sha256sum for the installer)
+# Install dependencies
+# - coreutils: sha256sum for installer
+# - libgcc/libstdc++/ripgrep: required for Claude Code native binary on Alpine
 RUN apk add --no-cache \
         bash \
         tmux \
@@ -14,12 +17,15 @@ RUN apk add --no-cache \
         jq \
         git \
         coreutils \
-    && mkdir -p /root/.config /root/.local/share /root/.claude
+        libgcc \
+        libstdc++ \
+        ripgrep \
+    && mkdir -p /root/.config /root/.local/share /root/.claude/bin
 
-# Install Claude Code via native installer (don't set XDG paths - they break the build)
-# https://docs.anthropic.com/en/docs/claude-code/getting-started
+# Install Claude Code via native installer
+# https://docs.anthropic.com/en/docs/claude-code/setup
 RUN curl -fsSL https://claude.ai/install.sh | bash \
-    && ln -sf /root/.local/bin/claude /usr/local/bin/claude \
+    && ln -sf /root/.claude/bin/claude /usr/local/bin/claude \
     && claude --version
 
 # Set XDG paths for runtime persistence (after install completes)
