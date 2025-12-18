@@ -17,6 +17,7 @@ RUN apk add --no-cache \
     && mkdir -p /root/.config /root/.local/share
 
 # https://code.claude.com/docs/en/setup#standard-installation
+# hadolint ignore=DL3008,DL4006
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Copy rootfs and set permissions
