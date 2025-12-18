@@ -5,7 +5,6 @@ slug: "claude-code-terminal"
 arch:
   - amd64
   - aarch64
-  - armv7
 url: "https://github.com/sammcj/hass-claude-code"
 
 # Pre-built images from GHCR (faster installs)

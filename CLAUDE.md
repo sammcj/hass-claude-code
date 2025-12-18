@@ -42,7 +42,7 @@ rootfs/
 - All shell scripts use `set -euo pipefail`
 - OAuth tokens persist in `/data/.claude/` (symlinked to `/root/.claude`)
 - Config options defined in `config.yaml` schema, read from `/data/options.json` at runtime
-- Multi-arch builds: amd64, aarch64, armv7 via GitHub Actions matrix
+- Multi-arch builds: amd64 and aarch64 via GitHub Actions matrix
 
 ## Gotchas
 

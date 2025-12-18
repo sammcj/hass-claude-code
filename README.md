@@ -8,7 +8,7 @@ A Home Assistant addon that provides Claude Code CLI with persistent tmux sessio
 - **OAuth Persistence**: Credentials survive container restarts
 - **Home Assistant Integration**: CLI tools to query entities and call services
 - **Configurable Timeouts**: Set how long idle sessions remain active
-- **Multi-Architecture**: Runs on amd64, aarch64 (Pi 4/5), and armv7
+- **Multi-Architecture**: Runs on amd64, aarch64 (Pi 4/5)
 
 ## Installation
 
