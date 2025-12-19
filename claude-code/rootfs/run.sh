@@ -48,6 +48,10 @@ setup_persistence() {
         cp -an /root/.claude/. /data/.claude/ 2>/dev/null || true
         rm -rf /root/.claude
     fi
+    if [[ -f /root/.claude.json ]] && [[ ! -L /root/.claude.json ]]; then
+        cp -an /root/.claude.json /data/.claude.json 2>/dev/null || true
+        rm -f /root/.claude.json
+    fi
 
     # Symlink entire config directories to persistent storage
     rm -rf /root/.claude /root/.anthropic /root/.config/claude
@@ -55,10 +59,14 @@ setup_persistence() {
     ln -sfn /data/.anthropic /root/.anthropic
     ln -sfn /data/.config/claude /root/.config/claude
 
+    # Symlink .claude.json file
+    rm -f /root/.claude.json
+    ln -sfn /data/.claude.json /root/.claude.json
+
     # Set HOME explicitly for Claude Code
     export HOME=/root
 
-    echo "[INFO] Persistence configured: /data/.claude, /data/.anthropic"
+    echo "[INFO] Persistence configured: /data/.claude, /data/.anthropic, /data/.claude.json"
 }
 
 # -----------------------------------------------------------------------------
