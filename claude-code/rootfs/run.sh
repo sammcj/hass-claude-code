@@ -80,6 +80,33 @@ ENVFILE
 }
 
 # -----------------------------------------------------------------------------
+# Idle watchdog - kills tmux session after inactivity timeout
+# -----------------------------------------------------------------------------
+start_idle_watchdog() {
+    local timeout_secs="$1"
+    (
+        while true; do
+            sleep 60  # Check every minute
+            if ! tmux has-session -t claude 2>/dev/null; then
+                exit 0  # Session gone, stop watchdog
+            fi
+            # Get last activity time (seconds since epoch)
+            local last_activity
+            last_activity=$(tmux display-message -t claude -p '#{session_activity}' 2>/dev/null || echo "0")
+            local now
+            now=$(date +%s)
+            local idle=$((now - last_activity))
+            if [[ $idle -gt $timeout_secs ]]; then
+                echo "[INFO] Session idle for ${idle}s (timeout: ${timeout_secs}s) - terminating"
+                tmux kill-session -t claude 2>/dev/null || true
+                exit 0
+            fi
+        done
+    ) &
+    echo "[INFO] Idle watchdog started (timeout: ${timeout_secs}s)"
+}
+
+# -----------------------------------------------------------------------------
 # Launch with tmux (session survives browser disconnect)
 # -----------------------------------------------------------------------------
 launch_with_tmux() {
@@ -89,16 +116,16 @@ launch_with_tmux() {
     # Create new detached session in /config directory
     tmux new-session -d -s claude -c /config
 
-    # Configure session timeout (lock-after-time locks after idle)
-    tmux set-option -t claude lock-after-time "$SESSION_TIMEOUT" 2>/dev/null || true
-
     # Verify session exists
     if ! tmux has-session -t claude 2>/dev/null; then
         echo "[ERROR] Failed to create tmux session"
         exit 1
     fi
 
-    echo "[INFO] tmux session 'claude' created (timeout: ${SESSION_TIMEOUT}s)"
+    echo "[INFO] tmux session 'claude' created"
+
+    # Start idle watchdog to terminate session after timeout
+    start_idle_watchdog "$SESSION_TIMEOUT"
 
     # Launch claude via wrapper script (handles errors gracefully, exits on success)
     if [[ "$AUTO_LAUNCH" == "true" ]]; then

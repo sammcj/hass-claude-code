@@ -97,12 +97,16 @@ show_auth_status() {
     echo "==========================================="
     echo ""
     echo "Config locations:"
+    # shellcheck disable=SC2012
     echo "  ~/.claude:     $(ls -la /root/.claude 2>/dev/null | head -1 || echo 'not found')"
+    # shellcheck disable=SC2012
     echo "  ~/.anthropic:  $(ls -la /root/.anthropic 2>/dev/null | head -1 || echo 'not found')"
     echo "  ~/.claude.json: $(ls -la /root/.claude.json 2>/dev/null || echo 'not found')"
     echo ""
     echo "Persistent storage:"
+    # shellcheck disable=SC2012
     echo "  /data/.claude:     $(ls -la /data/.claude 2>/dev/null | head -1 || echo 'not found')"
+    # shellcheck disable=SC2012
     echo "  /data/.anthropic:  $(ls -la /data/.anthropic 2>/dev/null | head -1 || echo 'not found')"
     echo "  /data/.claude.json: $(ls -la /data/.claude.json 2>/dev/null || echo 'not found')"
     echo ""

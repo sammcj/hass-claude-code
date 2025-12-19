@@ -58,6 +58,7 @@ echo ""
 echo "Authentication:"
 if [[ -d /data/.claude ]] && [[ "$(ls -A /data/.claude 2>/dev/null)" ]]; then
     check_pass "Auth data present in /data/.claude"
+    # shellcheck disable=SC2012
     ls /data/.claude/ 2>/dev/null | head -5 | sed 's/^/       /'
 else
     check_warn "No auth data in /data/.claude (not yet authenticated?)"
