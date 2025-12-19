@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ha-auth-helper: Alternative authentication methods for Claude Code
+# Use when clipboard paste doesn't work in the web terminal
+
+show_menu() {
+    clear
+    echo "==========================================="
+    echo "  Claude Authentication Helper"
+    echo "==========================================="
+    echo ""
+    echo "Having trouble pasting the authentication code?"
+    echo ""
+    echo "Options:"
+    echo "  1) Manual input (type or paste the code)"
+    echo "  2) Read code from file (/config/auth-code.txt)"
+    echo "  3) Retry standard authentication"
+    echo "  4) Show auth status"
+    echo "  5) Exit"
+    echo ""
+}
+
+manual_auth_input() {
+    echo ""
+    echo "Enter your authentication code:"
+    echo "(Try: Ctrl+Shift+V, right-click paste, or type manually)"
+    echo ""
+    echo -n "Code: "
+    read -r auth_code
+
+    if [[ -z "$auth_code" ]]; then
+        echo "No code provided"
+        return 1
+    fi
+
+    echo ""
+    echo "Starting Claude with provided code..."
+    sleep 1
+
+    # Pipe the code to Claude
+    echo "$auth_code" | claude /config
+}
+
+read_from_file() {
+    local auth_file="/config/auth-code.txt"
+
+    echo ""
+    echo "Looking for: $auth_file"
+
+    if [[ -f "$auth_file" ]]; then
+        local auth_code
+        auth_code=$(cat "$auth_file")
+
+        if [[ -z "$auth_code" ]]; then
+            echo "Error: File exists but is empty"
+            return 1
+        fi
+
+        echo "Code found. Starting Claude..."
+        sleep 1
+
+        # Pipe the code to Claude
+        echo "$auth_code" | claude /config
+
+        # Clean up
+        rm -f "$auth_file"
+        echo "Cleaned up auth code file"
+    else
+        echo "Error: File not found"
+        echo ""
+        echo "To use this method:"
+        echo "1. Create /config/auth-code.txt in Home Assistant"
+        echo "2. Paste your authentication code in the file"
+        echo "3. Save and run this option again"
+        return 1
+    fi
+}
+
+retry_standard_auth() {
+    echo ""
+    echo "Starting standard Claude authentication..."
+    echo ""
+    echo "Paste tips for web terminal:"
+    echo "  - Ctrl+Shift+V"
+    echo "  - Right-click menu"
+    echo "  - Browser Edit menu > Paste"
+    echo "  - Mobile: long-press for paste option"
+    echo ""
+    sleep 2
+    exec claude /config
+}
+
+show_auth_status() {
+    echo ""
+    echo "Authentication Status"
+    echo "==========================================="
+    echo ""
+    echo "Config locations:"
+    echo "  ~/.claude:     $(ls -la /root/.claude 2>/dev/null | head -1 || echo 'not found')"
+    echo "  ~/.anthropic:  $(ls -la /root/.anthropic 2>/dev/null | head -1 || echo 'not found')"
+    echo "  ~/.claude.json: $(ls -la /root/.claude.json 2>/dev/null || echo 'not found')"
+    echo ""
+    echo "Persistent storage:"
+    echo "  /data/.claude:     $(ls -la /data/.claude 2>/dev/null | head -1 || echo 'not found')"
+    echo "  /data/.anthropic:  $(ls -la /data/.anthropic 2>/dev/null | head -1 || echo 'not found')"
+    echo "  /data/.claude.json: $(ls -la /data/.claude.json 2>/dev/null || echo 'not found')"
+    echo ""
+
+    if [[ -d /data/.claude ]] && [[ "$(ls -A /data/.claude 2>/dev/null)" ]]; then
+        echo "Files in /data/.claude:"
+        ls -la /data/.claude/
+    fi
+    echo ""
+}
+
+main() {
+    while true; do
+        show_menu
+        echo -n "Choice [1-5]: "
+        read -r choice
+
+        case "$choice" in
+            1)
+                manual_auth_input || true
+                echo ""
+                echo "Press Enter to continue..."
+                read -r
+                ;;
+            2)
+                read_from_file || true
+                echo ""
+                echo "Press Enter to continue..."
+                read -r
+                ;;
+            3)
+                retry_standard_auth
+                ;;
+            4)
+                show_auth_status
+                echo "Press Enter to continue..."
+                read -r
+                ;;
+            5)
+                echo "Exiting..."
+                exit 0
+                ;;
+            *)
+                echo "Invalid choice"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+main "$@"

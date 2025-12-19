@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ha-health: System health check for Claude Code Terminal
+
+echo "==========================================="
+echo "  Claude Code Terminal Health Check"
+echo "==========================================="
+echo ""
+
+ERRORS=0
+
+check_pass() {
+    echo "[OK]   $1"
+}
+
+check_fail() {
+    echo "[FAIL] $1"
+    ERRORS=$((ERRORS + 1))
+}
+
+check_warn() {
+    echo "[WARN] $1"
+}
+
+# Check Claude binary
+echo "Claude Code:"
+if command -v claude &>/dev/null; then
+    VERSION=$(claude --version 2>/dev/null || echo "unknown")
+    check_pass "Claude installed: $VERSION"
+else
+    check_fail "Claude not found in PATH"
+fi
+
+# Check persistence directories
+echo ""
+echo "Persistence:"
+if [[ -L /root/.claude ]] && [[ -d /data/.claude ]]; then
+    check_pass "/root/.claude -> /data/.claude (symlinked)"
+else
+    check_fail "/root/.claude not properly symlinked to /data/.claude"
+fi
+
+if [[ -L /root/.anthropic ]] && [[ -d /data/.anthropic ]]; then
+    check_pass "/root/.anthropic -> /data/.anthropic (symlinked)"
+else
+    check_fail "/root/.anthropic not properly symlinked"
+fi
+
+if [[ -L /root/.claude.json ]]; then
+    check_pass "/root/.claude.json -> /data/.claude.json (symlinked)"
+else
+    check_warn "/root/.claude.json not symlinked (may not exist yet)"
+fi
+
+# Check auth status
+echo ""
+echo "Authentication:"
+if [[ -d /data/.claude ]] && [[ "$(ls -A /data/.claude 2>/dev/null)" ]]; then
+    check_pass "Auth data present in /data/.claude"
+    ls /data/.claude/ 2>/dev/null | head -5 | sed 's/^/       /'
+else
+    check_warn "No auth data in /data/.claude (not yet authenticated?)"
+fi
+
+# Check Home Assistant API
+echo ""
+echo "Home Assistant API:"
+if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+    check_pass "SUPERVISOR_TOKEN is set"
+
+    # Test API connectivity
+    if curl -sf -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
+        http://supervisor/core/api/config 2>/dev/null | jq -e '.version' &>/dev/null; then
+        HA_VERSION=$(curl -sf -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
+            http://supervisor/core/api/config 2>/dev/null | jq -r '.version')
+        check_pass "HA API accessible (version: $HA_VERSION)"
+    else
+        check_warn "HA API not responding (addon may still be starting)"
+    fi
+else
+    check_fail "SUPERVISOR_TOKEN not set"
+fi
+
+# Check filesystem access
+echo ""
+echo "Filesystem:"
+if [[ -d /config ]] && [[ -w /config ]]; then
+    check_pass "/config is writable"
+else
+    check_fail "/config not writable"
+fi
+
+if [[ -d /backup ]] && [[ -w /backup ]]; then
+    check_pass "/backup is writable"
+else
+    check_warn "/backup not accessible"
+fi
+
+# Check tmux
+echo ""
+echo "Terminal:"
+if command -v tmux &>/dev/null; then
+    check_pass "tmux installed"
+    if tmux has-session -t claude 2>/dev/null; then
+        check_pass "tmux session 'claude' active"
+    else
+        check_warn "tmux session 'claude' not running"
+    fi
+else
+    check_fail "tmux not installed"
+fi
+
+if command -v ttyd &>/dev/null; then
+    check_pass "ttyd installed"
+else
+    check_fail "ttyd not installed"
+fi
+
+# Environment
+echo ""
+echo "Environment:"
+echo "  HOME=$HOME"
+echo "  ANTHROPIC_CONFIG_DIR=${ANTHROPIC_CONFIG_DIR:-not set}"
+echo "  ANTHROPIC_HOME=${ANTHROPIC_HOME:-not set}"
+
+# Summary
+echo ""
+echo "==========================================="
+if [[ $ERRORS -eq 0 ]]; then
+    echo "Health check passed"
+else
+    echo "Health check found $ERRORS error(s)"
+fi
+echo "==========================================="
+
+exit $ERRORS

@@ -42,6 +42,8 @@ options:
 # Port mapping (null = internal only via ingress)
 ports:
   7681/tcp: null
+ports_description:
+  7681/tcp: "Web terminal (not required when using ingress)"
 
 # Filesystem mappings
 map:

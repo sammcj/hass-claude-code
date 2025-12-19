@@ -63,8 +63,18 @@ setup_persistence() {
     rm -f /root/.claude.json
     ln -sfn /data/.claude.json /root/.claude.json
 
-    # Set HOME explicitly for Claude Code
+    # Set environment for Claude Code
     export HOME=/root
+    export ANTHROPIC_CONFIG_DIR=/data/.anthropic
+    export ANTHROPIC_HOME=/data
+
+    # Save environment to file for subshells
+    cat > /etc/claude-env.sh << 'ENVFILE'
+export HOME=/root
+export ANTHROPIC_CONFIG_DIR=/data/.anthropic
+export ANTHROPIC_HOME=/data
+export SUPERVISOR_TOKEN="${SUPERVISOR_TOKEN:-}"
+ENVFILE
 
     echo "[INFO] Persistence configured: /data/.claude, /data/.anthropic, /data/.claude.json"
 }
@@ -99,8 +109,12 @@ launch_with_tmux() {
         echo "[INFO] Shell mode - run 'claude' to start, 'exit' to close session"
     fi
 
-    # Launch ttyd connecting to tmux session
-    exec ttyd -W -p 7681 tmux attach -t claude
+    # Launch ttyd connecting to tmux session with theming
+    exec ttyd -W -p 7681 \
+        -t 'fontSize=14' \
+        -t 'fontFamily=monospace' \
+        -t 'theme={"background":"#1a1a2e","foreground":"#eaeaea","cursor":"#00d9ff"}' \
+        tmux attach -t claude
 }
 
 # -----------------------------------------------------------------------------
@@ -109,10 +123,18 @@ launch_with_tmux() {
 launch_direct() {
     if [[ "$AUTO_LAUNCH" == "true" ]]; then
         echo "[INFO] Launching Claude Code directly"
-        exec ttyd -W -p 7681 claude
+        exec ttyd -W -p 7681 \
+            -t 'fontSize=14' \
+            -t 'fontFamily=monospace' \
+            -t 'theme={"background":"#1a1a2e","foreground":"#eaeaea","cursor":"#00d9ff"}' \
+            claude /config
     else
         echo "[INFO] Launching bash shell"
-        exec ttyd -W -p 7681 bash
+        exec ttyd -W -p 7681 \
+            -t 'fontSize=14' \
+            -t 'fontFamily=monospace' \
+            -t 'theme={"background":"#1a1a2e","foreground":"#eaeaea","cursor":"#00d9ff"}' \
+            bash --login
     fi
 }
 
