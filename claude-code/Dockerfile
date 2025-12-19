@@ -20,19 +20,15 @@ RUN apk add --no-cache \
         libgcc \
         libstdc++ \
         ripgrep \
-    && mkdir -p /root/.config /root/.local/share /root/.claude/bin
+    && mkdir -p /root/.config /root/.local/share
 
 # Install Claude Code via native installer
 # https://docs.anthropic.com/en/docs/claude-code/setup
-# Installer puts binary at ~/.local/bin/claude
+# Binary installs to ~/.local/bin/claude, config goes to ~/.claude/
 RUN curl -fsSL https://claude.ai/install.sh | bash \
     && ls -la /root/.local/bin/ \
     && ln -sf /root/.local/bin/claude /usr/local/bin/claude \
     && /usr/local/bin/claude --version
-
-# Set XDG paths for runtime persistence (after install completes)
-ENV XDG_CONFIG_HOME=/data/.config \
-    XDG_DATA_HOME=/data/.local/share
 
 # Copy rootfs and default config files
 COPY rootfs /

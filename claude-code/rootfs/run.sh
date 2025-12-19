@@ -36,42 +36,29 @@ setup_claude_md() {
 # -----------------------------------------------------------------------------
 setup_persistence() {
     # Create persistent storage directories
-    mkdir -p /data/.claude-config /data/.config/claude /data/.anthropic
-    chmod 700 /data/.claude-config /data/.config/claude /data/.anthropic
+    # Note: Binary is at /root/.local/bin/claude, config is in /root/.claude/
+    mkdir -p /data/.claude /data/.config/claude /data/.anthropic
+    chmod 700 /data/.claude /data/.config/claude /data/.anthropic
 
     # Ensure parent directories exist in container
     mkdir -p /root/.config
 
-    # Note: /root/.claude contains the Claude binary at /root/.claude/bin/claude
-    # We must NOT delete or replace it. Instead, symlink config subdirs.
+    # Migrate any existing config from container to persistent storage
+    if [[ -d /root/.claude ]] && [[ ! -L /root/.claude ]]; then
+        cp -an /root/.claude/. /data/.claude/ 2>/dev/null || true
+        rm -rf /root/.claude
+    fi
 
-    # Symlink config directories (not ~/.claude itself - that has the binary)
-    rm -rf /root/.anthropic /root/.config/claude
+    # Symlink entire config directories to persistent storage
+    rm -rf /root/.claude /root/.anthropic /root/.config/claude
+    ln -sfn /data/.claude /root/.claude
     ln -sfn /data/.anthropic /root/.anthropic
     ln -sfn /data/.config/claude /root/.config/claude
-
-    # Symlink specific Claude config files/dirs if they exist in the binary location
-    # The OAuth tokens are typically in ~/.claude/ alongside the binary
-    for item in credentials.json settings.json .credentials; do
-        if [[ -e "/data/.claude-config/$item" ]]; then
-            ln -sfn "/data/.claude-config/$item" "/root/.claude/$item"
-        fi
-    done
-
-    # Copy any existing auth files to persistent storage on first run
-    for item in credentials.json settings.json .credentials; do
-        if [[ -e "/root/.claude/$item" ]] && [[ ! -L "/root/.claude/$item" ]] && [[ ! -e "/data/.claude-config/$item" ]]; then
-            cp -a "/root/.claude/$item" "/data/.claude-config/"
-            rm -rf "/root/.claude/$item"
-            ln -sfn "/data/.claude-config/$item" "/root/.claude/$item"
-        fi
-    done
 
     # Set HOME explicitly for Claude Code
     export HOME=/root
 
-    echo "[INFO] Persistence directories configured"
-    echo "[INFO] Token storage: /data/.claude-config, /data/.anthropic"
+    echo "[INFO] Persistence configured: /data/.claude, /data/.anthropic"
 }
 
 # -----------------------------------------------------------------------------
