@@ -1,7 +1,7 @@
 ---
 name: "Claude Code Terminal"
 description: "Claude Code CLI with persistent tmux sessions, OAuth persistence, and HA API tools"
-version: "2025.12.7"
+version: "2025.12.8"
 slug: "hass-claude-code"
 arch:
   - amd64
